@@ -1,0 +1,169 @@
+{
+  "snapshot_id": "2026-08-03-manual",
+  "prepared_at": "2026-08-05T15:46:23.472Z",
+  "disclaimer": "社区维护档案，与 DeepSeek 无关。指标为快照时点数据，非实时。项目主页/简介来自 GitHub 公开字段与 README 启发式抽取，非人工背书。",
+  "totals": {
+    "replies_raw": 1367,
+    "developers": 964,
+    "strong_or_application": 798,
+    "with_projects": 798,
+    "project_rows": 897,
+    "unique_repos": 877,
+    "with_github_username": 694,
+    "with_github_profile": 682,
+    "with_homepage": 509,
+    "with_docs_url": 78,
+    "deepseek_native": 148,
+    "metrics_ok": 865,
+    "stars_sum": 1364878
+  },
+  "intent_breakdown": {
+    "strong_application": 781,
+    "interest_only": 61,
+    "profile_only": 99,
+    "application": 17,
+    "unknown": 4,
+    "bot": 1,
+    "noise_or_comment": 1
+  },
+  "identity_breakdown": {
+    "explicit": 584,
+    "unconfirmed": 269,
+    "mapped": 110,
+    "bot": 1
+  },
+  "category_stats": {
+    "agent-harness": {
+      "count": 141,
+      "stars": 140607
+    },
+    "infrastructure": {
+      "count": 31,
+      "stars": 88111
+    },
+    "tooling-automation": {
+      "count": 48,
+      "stars": 103059
+    },
+    "skills": {
+      "count": 118,
+      "stars": 96266
+    },
+    "agent-orchestration": {
+      "count": 71,
+      "stars": 82887
+    },
+    "coding-agent": {
+      "count": 146,
+      "stars": 290570
+    },
+    "memory-context": {
+      "count": 78,
+      "stars": 205157
+    },
+    "security-governance": {
+      "count": 26,
+      "stars": 10158
+    },
+    "creative-tools": {
+      "count": 30,
+      "stars": 40238
+    },
+    "agent-workspace": {
+      "count": 60,
+      "stars": 108065
+    },
+    "agent-client": {
+      "count": 37,
+      "stars": 45332
+    },
+    "research-evaluation": {
+      "count": 27,
+      "stars": 4977
+    },
+    "research-tools": {
+      "count": 11,
+      "stars": 13003
+    },
+    "unclassified": {
+      "count": 19,
+      "stars": 731
+    },
+    "education": {
+      "count": 7,
+      "stars": 193
+    },
+    "developer-tools": {
+      "count": 21,
+      "stars": 102084
+    },
+    "other": {
+      "count": 3,
+      "stars": 30139
+    },
+    "domain-application": {
+      "count": 3,
+      "stars": 3301
+    }
+  },
+  "language_stats": {
+    "Python": 243,
+    "(none)": 33,
+    "Rust": 86,
+    "TypeScript": 264,
+    "C#": 5,
+    "Go": 63,
+    "Elixir": 3,
+    "Shell": 11,
+    "JavaScript": 67,
+    "Dart": 2,
+    "Java": 14,
+    "Swift": 23,
+    "HTML": 16,
+    "C++": 13,
+    "PowerShell": 2,
+    "Haskell": 1,
+    "Kotlin": 5,
+    "Lua": 1,
+    "Julia": 1,
+    "C": 6,
+    "PHP": 2,
+    "Ruby": 5,
+    "Jupyter Notebook": 1,
+    "Svelte": 1,
+    "Zig": 2,
+    "Assembly": 2,
+    "Solidity": 1,
+    "Scala": 1,
+    "Nix": 1,
+    "PDDL": 1,
+    "Vue": 1
+  },
+  "star_tiers": {
+    "S_10k": 31,
+    "A_1k": 73,
+    "B_100": 134,
+    "C_1": 482,
+    "Z_0": 157
+  },
+  "residual_gaps": {
+    "missing_explicit_github_id_with_project": 203,
+    "no_project": 166,
+    "github_404": 12,
+    "empty_description": 23,
+    "unclassified": 19,
+    "no_homepage": 368
+  },
+  "prep_stats": {
+    "desc_improved": 0,
+    "desc_from_readme": 2,
+    "cat_from_readme": 4,
+    "name_filled": 0,
+    "metrics_reattached": 897,
+    "homepage_github": 483,
+    "homepage_from_readme": 29,
+    "docs_found": 79,
+    "user_profiles_attached": 682,
+    "bio_filled": 10
+  }
+}
