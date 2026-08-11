@@ -308,26 +308,25 @@ class ProjectCard(QFrame):
         
         # Header row
         header_layout = QHBoxLayout()
-        name_lbl = QLabel(project.get("name", ""))
-        name_lbl.setProperty("cssClass", "cardTitle")
+        self.name_lbl = QLabel(project.get("name", ""))
+        self.name_lbl.setProperty("cssClass", "cardTitle")
         
         stars = project.get("stars", 0)
-        stars_lbl = QLabel(f"★ {fmt_k(stars)}")
-        stars_lbl.setProperty("cssClass", "cardStars")
+        self.stars_lbl = QLabel(f"★ {fmt_k(stars)}")
+        self.stars_lbl.setProperty("cssClass", "cardStars")
         
-        header_layout.addWidget(name_lbl)
+        header_layout.addWidget(self.name_lbl)
         header_layout.addStretch()
-        header_layout.addWidget(stars_lbl)
+        header_layout.addWidget(self.stars_lbl)
         layout.addLayout(header_layout)
         
         # Desc
-        desc_lbl = QLabel(project.get("description", ""))
-        desc_lbl.setProperty("cssClass", "cardDesc")
-        desc_lbl.setWordWrap(True)
-        # rudimentary 2 line elision
-        desc_lbl.setMinimumHeight(40)
-        desc_lbl.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        layout.addWidget(desc_lbl)
+        self.desc_lbl = QLabel(project.get("description", ""))
+        self.desc_lbl.setProperty("cssClass", "cardDesc")
+        self.desc_lbl.setWordWrap(True)
+        self.desc_lbl.setMinimumHeight(40)
+        self.desc_lbl.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        layout.addWidget(self.desc_lbl)
         
         layout.addStretch()
         
@@ -358,6 +357,13 @@ class ProjectCard(QFrame):
             footer_layout.addWidget(app_lbl)
             
         layout.addLayout(footer_layout)
+
+    def update_project(self, project: dict):
+        self.project_data = project
+        self.name_lbl.setText(project.get("name", ""))
+        stars = project.get("stars", 0)
+        self.stars_lbl.setText(f"★ {fmt_k(stars)}")
+        self.desc_lbl.setText(project.get("description", ""))
         
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

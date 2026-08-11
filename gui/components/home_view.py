@@ -210,6 +210,60 @@ class HomeView(QWidget):
 
         self.tracks_grid = QGridLayout()
         self.tracks_grid.setSpacing(16)
+        
+        self.track_widgets = {}
+        row, col = 0, 0
+        for cat_id, cat_info in CATS.items():
+            if cat_id == 'all': continue
+            
+            card = QWidget()
+            card.setCursor(Qt.PointingHandCursor)
+            card.setStyleSheet("""
+                QWidget {
+                    background-color: #121824;
+                    border: 1px solid #1e2638;
+                    border-radius: 8px;
+                }
+                QWidget:hover {
+                    border-color: #e3b341;
+                }
+            """)
+            card_layout = QVBoxLayout(card)
+            
+            title = QLabel(cat_info['zh'])
+            title.setStyleSheet("color: #ece5d6; font-size: 16px; font-weight: bold; border: none; background: transparent;")
+            subtitle = QLabel(cat_id)
+            subtitle.setStyleSheet("color: #67758c; font-size: 11px; font-family: 'Menlo', 'Courier New'; border: none; background: transparent;")
+            
+            stats_label = QLabel("0 projects · 0 stars")
+            stats_label.setStyleSheet("color: #9aa7ba; font-size: 12px; border: none; background: transparent;")
+            
+            prog = QProgressBar()
+            prog.setFixedHeight(4)
+            prog.setTextVisible(False)
+            prog.setMaximum(100)
+            prog.setValue(0)
+            prog.setStyleSheet("""
+                QProgressBar { border: none; background: #0a0e17; border-radius: 2px; }
+                QProgressBar::chunk { background-color: #e3b341; border-radius: 2px; }
+            """)
+            
+            card_layout.addWidget(title)
+            card_layout.addWidget(subtitle)
+            card_layout.addStretch()
+            card_layout.addWidget(stats_label)
+            card_layout.addWidget(prog)
+            
+            card.mouseReleaseEvent = lambda e, cid=cat_id: self.navigate_to.emit('leaderboard', {'cat': cid})
+            
+            self.tracks_grid.addWidget(card, row, col)
+            self.track_widgets[cat_id] = (stats_label, prog)
+            
+            col += 1
+            if col > 2:
+                col = 0
+                row += 1
+
         layout.addLayout(self.tracks_grid)
         self.content_layout.addWidget(container)
 
@@ -223,6 +277,20 @@ class HomeView(QWidget):
 
         self.featured_grid = QGridLayout()
         self.featured_grid.setSpacing(16)
+        
+        self.featured_cards = []
+        r_f, c_f = 0, 0
+        for i in range(8):
+            dummy = {"name": "", "stars": 0, "description": "", "category": "all"}
+            card = ProjectCard(dummy)
+            card.clicked.connect(lambda name: self.navigate_to.emit('project_detail', {'name': name}))
+            self.featured_grid.addWidget(card, r_f, c_f)
+            self.featured_cards.append(card)
+            c_f += 1
+            if c_f > 1:
+                c_f = 0
+                r_f += 1
+
         layout.addLayout(self.featured_grid)
         self.content_layout.addWidget(container)
 
@@ -276,27 +344,29 @@ class HomeView(QWidget):
         layout = QVBoxLayout(container)
         layout.setSpacing(16)
 
-        header = self._create_section_header('05 · HONEST GAPS', '诚实保留的缺口')
+        header = self._create_section_header('05 · GAPS', '技术盲区 & 待解痛点')
         layout.addLayout(header)
 
-        self.gaps_flow = FlowLayout()
+        self.gaps_flow = QHBoxLayout()
+        self.gaps_flow.setSpacing(8)
+        self.gap_labels = {}
+        for g_id, g_label in GAP_META.items():
+            lbl = BadgeLabel(f"{g_label} 0", "#67758c")
+            self.gaps_flow.addWidget(lbl)
+            self.gap_labels[g_id] = (lbl, g_label)
+
         layout.addLayout(self.gaps_flow)
-        
         self.content_layout.addWidget(container)
 
     def refresh(self):
-        stats = data_store.stats.get('totals', {})
-        
-        # KPI Update
+        # Header / Stats Update
         totals = data_store.stats.get('totals', {})
-        if 'developers_count' in self.kpi_widgets:
-            self.kpi_widgets['developers_count'].set_value(fmt_num(totals.get('developers', 0)))
-        if 'unique_repos' in self.kpi_widgets:
-            self.kpi_widgets['unique_repos'].set_value(fmt_num(totals.get('unique_repos', 0)))
-        if 'stars_sum' in self.kpi_widgets:
-            self.kpi_widgets['stars_sum'].set_value(fmt_k(totals.get('stars_sum', 0)))
-        if 'with_github_username' in self.kpi_widgets:
-            self.kpi_widgets['with_github_username'].set_value(fmt_num(totals.get('with_github_username', 0)))
+        if 'applicants' in self.kpi_widgets:
+            self.kpi_widgets['applicants'].set_value(fmt_num(totals.get('applicants', 0)))
+        if 'repos' in self.kpi_widgets:
+            self.kpi_widgets['repos'].set_value(fmt_num(totals.get('repos', 0)))
+        if 'total_stars' in self.kpi_widgets:
+            self.kpi_widgets['total_stars'].set_value(fmt_num(totals.get('total_stars', 0)))
         if 'with_homepage' in self.kpi_widgets:
             self.kpi_widgets['with_homepage'].set_value(fmt_num(totals.get('with_homepage', 0)))
         if 'deepseek_native' in self.kpi_widgets:
@@ -306,9 +376,8 @@ class HomeView(QWidget):
         sorted_proj = sort_projects(data_store.projects, 'stars')
         top10 = sorted_proj[:10]
         self.top10_table.setRowCount(len(top10))
-        self.top10_data = top10 # store for click handler
+        self.top10_data = top10
         for r, p in enumerate(top10):
-            # Rank
             rank_item = QTableWidgetItem(f"{r+1}")
             rank_item.setTextAlignment(Qt.AlignCenter)
             if r == 0: rank_item.setForeground(QColor("#e3b341"))
@@ -316,38 +385,28 @@ class HomeView(QWidget):
             elif r == 2: rank_item.setForeground(QColor("#cd7f32"))
             self.top10_table.setItem(r, 0, rank_item)
             
-            # Name
             self.top10_table.setItem(r, 1, QTableWidgetItem(p.get('name', '')))
             
-            # Stars
             stars = p.get('stars') or p.get('metrics', {}).get('stars', 0)
             stars_item = QTableWidgetItem(fmt_num(stars))
             stars_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.top10_table.setItem(r, 2, stars_item)
             
-            # Language
             lang = p.get('language', '')
             self.top10_table.setItem(r, 3, QTableWidgetItem(lang))
             
             cat_id = p.get('category', '')
             cat_info = cat_of(cat_id)
-            self.top10_table.setItem(r, 4, QTableWidgetItem(cat_info.get('zh', cat_id)))
+            cat_zh = cat_info.get('zh', cat_id) if isinstance(cat_info, dict) else str(cat_info)
+            self.top10_table.setItem(r, 4, QTableWidgetItem(cat_zh))
             
-            # Applicant
             applicant_str = p.get('applicant_x', '') or (p.get('applicant', {}).get('x', '') if isinstance(p.get('applicant'), dict) else '')
             self.top10_table.setItem(r, 5, QTableWidgetItem(applicant_str))
             
-            # Update
             pushed_at = p.get('pushed_at', '') or p.get('metrics', {}).get('pushed_at', '')
             self.top10_table.setItem(r, 6, QTableWidgetItem(fmt_date(pushed_at)))
 
         # Tracks Update
-        for i in reversed(range(self.tracks_grid.count())): 
-            w = self.tracks_grid.itemAt(i).widget()
-            if w:
-                w.setParent(None)
-                w.deleteLater()
-
         cat_stats = data_store.stats.get('category_stats', {})
         def _get_c_info(val):
             if isinstance(val, dict):
@@ -358,75 +417,21 @@ class HomeView(QWidget):
         counts = [_get_c_info(c)[0] for c in cat_stats.values()]
         max_count = max(counts) if counts and max(counts) > 0 else 1
         
-        row, col = 0, 0
-        for cat_id, cat_info in CATS.items():
-            if cat_id == 'all': continue
+        for cat_id, (stats_label, prog) in self.track_widgets.items():
             c_val = cat_stats.get(cat_id, {})
             c_cnt, c_stars = _get_c_info(c_val)
-            
-            card = QWidget()
-            card.setCursor(Qt.PointingHandCursor)
-            card.setStyleSheet("""
-                QWidget {
-                    background-color: #121824;
-                    border: 1px solid #1e2638;
-                    border-radius: 8px;
-                }
-                QWidget:hover {
-                    border-color: #e3b341;
-                }
-            """)
-            card_layout = QVBoxLayout(card)
-            
-            title = QLabel(cat_info['zh'])
-            title.setStyleSheet("color: #ece5d6; font-size: 16px; font-weight: bold; border: none; background: transparent;")
-            subtitle = QLabel(cat_id)
-            subtitle.setStyleSheet("color: #67758c; font-size: 11px; font-family: 'Menlo', 'Courier New'; border: none; background: transparent;")
-            
-            stats_label = QLabel(f"{c_cnt} projects · {fmt_k(c_stars)} stars")
-            stats_label.setStyleSheet("color: #9aa7ba; font-size: 12px; border: none; background: transparent;")
-            
-            prog = QProgressBar()
-            prog.setFixedHeight(4)
-            prog.setTextVisible(False)
+            stats_label.setText(f"{c_cnt} projects · {fmt_k(c_stars)} stars")
             prog.setMaximum(max_count)
             prog.setValue(c_cnt)
-            prog.setStyleSheet("""
-                QProgressBar { border: none; background: #0a0e17; border-radius: 2px; }
-                QProgressBar::chunk { background-color: #e3b341; border-radius: 2px; }
-            """)
-            
-            card_layout.addWidget(title)
-            card_layout.addWidget(subtitle)
-            card_layout.addStretch()
-            card_layout.addWidget(stats_label)
-            card_layout.addWidget(prog)
-            
-            card.mouseReleaseEvent = lambda e, cid=cat_id: self.navigate_to.emit('leaderboard', {'cat': cid})
-            
-            self.tracks_grid.addWidget(card, row, col)
-            col += 1
-            if col > 2:
-                col = 0
-                row += 1
 
         # Featured Update
-        for i in reversed(range(self.featured_grid.count())): 
-            w = self.featured_grid.itemAt(i).widget()
-            if w:
-                w.setParent(None)
-                w.deleteLater()
-                
         featured = data_store.featured[:8] if data_store.featured else sorted_proj[:8]
-        r_f, c_f = 0, 0
-        for p in featured:
-            card = ProjectCard(p)
-            card.mouseReleaseEvent = lambda e, name=p.get('name'): self.navigate_to.emit('project_detail', {'name': name})
-            self.featured_grid.addWidget(card, r_f, c_f)
-            c_f += 1
-            if c_f > 1:
-                c_f = 0
-                r_f += 1
+        for i, card in enumerate(self.featured_cards):
+            if i < len(featured):
+                card.update_project(featured[i])
+                card.show()
+            else:
+                card.hide()
 
         # Ecosystem Update
         lang_stats = data_store.stats.get('language_stats', {})
@@ -454,18 +459,10 @@ class HomeView(QWidget):
         self.track_chart.set_data(track_data[:10], ['#4f6385']*10)
 
         # Gaps Update
-        for i in reversed(range(self.gaps_flow.count())): 
-            item = self.gaps_flow.itemAt(i)
-            if item.widget():
-                item.widget().setParent(None)
-                item.widget().deleteLater()
-                
         gap_stats = data_store.stats.get('residual_gaps', {})
-        for g_id, g_label in GAP_META.items():
+        for g_id, (lbl, g_label) in self.gap_labels.items():
             count = gap_stats.get(g_id, 0)
-            text = f"{g_label} {count}"
-            lbl = BadgeLabel(text, "#67758c")
-            self.gaps_flow.addWidget(lbl)
+            lbl.setText(f"{g_label} {count}")
 
     def on_top10_clicked(self, row, col):
         if hasattr(self, 'top10_data') and row < len(self.top10_data):
