@@ -236,7 +236,21 @@ class PagerWidget(QWidget):
         # Prev button
         prev_btn = QPushButton("←")
         prev_btn.setProperty("cssClass", "pagerBtn")
+        prev_btn.setCursor(Qt.PointingHandCursor)
         prev_btn.setEnabled(page > 1)
+        prev_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #101827;
+                border: 1px solid rgba(158, 178, 205, 0.15);
+                color: #9aa7ba;
+                border-radius: 6px;
+                min-width: 32px;
+                min-height: 32px;
+                font-size: 13px;
+            }
+            QPushButton:hover { border-color: #e3b341; color: #ece5d6; }
+            QPushButton:disabled { color: rgba(103, 117, 140, 0.3); border-color: rgba(158, 178, 205, 0.05); }
+        """)
         prev_btn.clicked.connect(lambda: self.page_changed.emit(self.current_page - 1))
         self.layout.addWidget(prev_btn)
         
@@ -244,18 +258,61 @@ class PagerWidget(QWidget):
         for i in range(1, total_pages + 1):
             if i == 1 or i == total_pages or abs(i - page) <= 2:
                 btn = QPushButton(str(i))
-                btn.setProperty("cssClass", "pagerBtnActive" if i == page else "pagerBtn")
+                btn.setCursor(Qt.PointingHandCursor)
+                if i == page:
+                    btn.setProperty("cssClass", "pagerBtnActive")
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: rgba(227, 179, 65, 0.22);
+                            border: 1px solid #e3b341;
+                            color: #e3b341;
+                            font-weight: bold;
+                            border-radius: 6px;
+                            min-width: 32px;
+                            min-height: 32px;
+                            font-size: 13px;
+                        }
+                    """)
+                else:
+                    btn.setProperty("cssClass", "pagerBtn")
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #101827;
+                            border: 1px solid rgba(158, 178, 205, 0.15);
+                            color: #9aa7ba;
+                            border-radius: 6px;
+                            min-width: 32px;
+                            min-height: 32px;
+                            font-size: 13px;
+                        }
+                        QPushButton:hover { border-color: #e3b341; color: #ece5d6; }
+                    """)
                 btn.clicked.connect(lambda checked, p=i: self.page_changed.emit(p))
                 self.layout.addWidget(btn)
             elif abs(i - page) == 3:
                 lbl = QLabel("...")
+                lbl.setStyleSheet("color: #67758c; padding: 0 4px;")
                 lbl.setProperty("cssClass", "pagerEllipsis")
                 self.layout.addWidget(lbl)
                 
         # Next button
         next_btn = QPushButton("→")
         next_btn.setProperty("cssClass", "pagerBtn")
+        next_btn.setCursor(Qt.PointingHandCursor)
         next_btn.setEnabled(page < total_pages)
+        next_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #101827;
+                border: 1px solid rgba(158, 178, 205, 0.15);
+                color: #9aa7ba;
+                border-radius: 6px;
+                min-width: 32px;
+                min-height: 32px;
+                font-size: 13px;
+            }
+            QPushButton:hover { border-color: #e3b341; color: #ece5d6; }
+            QPushButton:disabled { color: rgba(103, 117, 140, 0.3); border-color: rgba(158, 178, 205, 0.05); }
+        """)
         next_btn.clicked.connect(lambda: self.page_changed.emit(self.current_page + 1))
         self.layout.addWidget(next_btn)
 

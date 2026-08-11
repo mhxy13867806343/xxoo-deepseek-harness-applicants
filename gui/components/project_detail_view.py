@@ -14,6 +14,35 @@ from core.data_loader import data_store, CATS, fmt_num, fmt_date, cat_of
 from gui.components.widgets import BadgeLabel, MetricCard
 
 
+def fmt_release(rel):
+    if not rel:
+        return "—"
+    if isinstance(rel, dict):
+        tag = rel.get("tag_name") or rel.get("name") or rel.get("published_at")
+        if tag:
+            return str(tag)[:20]
+        return "已发布"
+    if isinstance(rel, str):
+        rel_str = rel.strip()
+        if rel_str.startswith("{") and ("tag_name" in rel_str or "html_url" in rel_str):
+            import ast, re
+            try:
+                parsed = ast.literal_eval(rel_str)
+                if isinstance(parsed, dict):
+                    return fmt_release(parsed)
+            except Exception:
+                pass
+            tag_match = re.search(r"['\"]tag_name['\"]\s*:\s*['\"]([^'\"]+)['\"]", rel_str)
+            if tag_match:
+                return tag_match.group(1)[:20]
+            name_match = re.search(r"['\"]name['\"]\s*:\s*['\"]([^'\"]+)['\"]", rel_str)
+            if name_match:
+                return name_match.group(1)[:20]
+            return "已发布"
+        return rel_str[:20]
+    return str(rel)[:20]
+
+
 class ProjectDetailView(QWidget):
     """Detailed view for an individual project."""
     navigate_to = pyqtSignal(str, dict)
@@ -67,7 +96,6 @@ class ProjectDetailView(QWidget):
             if item.widget():
                 item.widget().deleteLater()
             elif item.layout():
-                # Clear nested layouts
                 while item.layout().count():
                     sub_item = item.layout().takeAt(0)
                     if sub_item.widget():
@@ -171,7 +199,7 @@ class ProjectDetailView(QWidget):
         lang = proj.get("language") or "未指定"
         created_at = fmt_date(proj.get("created_at")) or "—"
         updated_at = fmt_date(proj.get("pushed_at") or proj.get("updated_at")) or "—"
-        latest_rel = proj.get("latest_release") or "—"
+        latest_rel = fmt_release(proj.get("latest_release"))
         owner_type = proj.get("owner_type") or ("组织" if "/" in name else "个人")
         if owner_type == "User": owner_type = "个人"
         elif owner_type == "Organization": owner_type = "组织"
@@ -215,10 +243,11 @@ class ProjectDetailView(QWidget):
             rc_title.setStyleSheet("color: #ece5d6; font-size: 16px; font-weight: bold;")
             rc_layout.addWidget(rc_title)
 
-            # Strip html tags or render text cleanly
-            rc_text = QLabel(str(readme))
-            rc_text.setStyleSheet("color: #9aa7ba; font-size: 13px; line-height: 1.5;")
+            rc_text = QLabel()
+            rc_text.setStyleSheet("color: #9aa7ba; font-size: 13px; line-height: 1.6;")
             rc_text.setWordWrap(True)
+            rc_text.setTextFormat(Qt.MarkdownText)
+            rc_text.setText(str(readme))
             rc_layout.addWidget(rc_text)
 
             self.content_layout.addWidget(readme_card)
