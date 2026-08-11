@@ -402,6 +402,10 @@ class ProjectCard(QFrame):
         cat_zh = CATS.get(cat, {}).get("zh", cat)
         footer_layout.addWidget(BadgeLabel(cat_zh, "blue"))
         
+        license_str = project.get("license") or ""
+        if license_str:
+            footer_layout.addWidget(BadgeLabel(license_str, "gray"))
+
         if project.get("deepseek_native") or project.get("is_deepseek_native"):
             footer_layout.addWidget(BadgeLabel("DS Native", "gold"))
             

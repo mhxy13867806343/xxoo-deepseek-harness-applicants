@@ -71,6 +71,10 @@ class ProjectsView(QWidget):
         """)
         self.lang_combo.currentIndexChanged.connect(self._on_lang_changed)
         
+        self.lic_combo = QComboBox()
+        self.lic_combo.setStyleSheet(self.lang_combo.styleSheet())
+        self.lic_combo.currentIndexChanged.connect(self._on_lic_changed)
+        
         self.sort_combo = QComboBox()
         self.sort_combo.addItems(['Stars 高→低', '最近更新', '上线时间', '名称 A→Z'])
         self.sort_combo.setStyleSheet(self.lang_combo.styleSheet())
@@ -90,6 +94,7 @@ class ProjectsView(QWidget):
         
         toolbar_layout.addWidget(self.search_input, 1)
         toolbar_layout.addWidget(self.lang_combo)
+        toolbar_layout.addWidget(self.lic_combo)
         toolbar_layout.addWidget(self.sort_combo)
         toolbar_layout.addWidget(self.cb_ds)
         toolbar_layout.addWidget(self.cb_high)
@@ -108,20 +113,19 @@ class ProjectsView(QWidget):
         main_layout.addWidget(self.meta_label)
         
         # 5. Scrollable Card Grid
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setFrameShape(QFrame.NoFrame)
-        self.scroll_area.setStyleSheet("QScrollArea { background: transparent; } QWidget#gridContainer { background: transparent; }")
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        self.scroll_area = scroll
         
-        self.grid_container = QWidget()
-        self.grid_container.setObjectName("gridContainer")
-        self.grid_layout = QGridLayout(self.grid_container)
-        self.grid_layout.setSpacing(20)
-        self.grid_layout.setAlignment(Qt.AlignTop)
+        grid_container = QWidget()
+        grid_container.setStyleSheet("background: transparent;")
+        self.grid_layout = QGridLayout(grid_container)
+        self.grid_layout.setSpacing(16)
         
-        self.scroll_area.setWidget(self.grid_container)
-        main_layout.addWidget(self.scroll_area, 1)
+        scroll.setWidget(grid_container)
+        main_layout.addWidget(scroll, 1)
         
         # 6. Pager
         self.pager = PagerWidget()
@@ -129,7 +133,7 @@ class ProjectsView(QWidget):
         main_layout.addWidget(self.pager, 0, Qt.AlignCenter)
         
     def refresh(self):
-        # Update combo boxes
+        # Update lang combo box
         langs = list(data_store.stats.get('language_stats', {}).keys())
         self.lang_combo.blockSignals(True)
         self.lang_combo.clear()
@@ -146,6 +150,23 @@ class ProjectsView(QWidget):
             self.lang_combo.setCurrentIndex(0)
             self.lang = ""
         self.lang_combo.blockSignals(False)
+        
+        # Update lic combo box
+        licenses = sorted(list(set(p.get('license') for p in data_store.projects if p.get('license'))))
+        self.lic_combo.blockSignals(True)
+        self.lic_combo.clear()
+        self.lic_combo.addItem("所有 License", "")
+        for l_name in licenses:
+            self.lic_combo.addItem(l_name, l_name)
+        self.lic_combo.addItem("未指定 License", "none")
+
+        lic_idx = self.lic_combo.findData(getattr(self, 'lic', ''))
+        if lic_idx >= 0:
+            self.lic_combo.setCurrentIndex(lic_idx)
+        else:
+            self.lic_combo.setCurrentIndex(0)
+            self.lic = ""
+        self.lic_combo.blockSignals(False)
         
         # Update chips
         cat_stats = data_store.stats.get('category_stats', {})
@@ -177,7 +198,15 @@ class ProjectsView(QWidget):
             self.lang = ""
         self.page = 1
         self._apply_filters()
-        
+
+    def _on_lic_changed(self, idx):
+        if idx >= 0:
+            self.lic = self.lic_combo.itemData(idx) or ""
+        else:
+            self.lic = ""
+        self.page = 1
+        self._apply_filters()
+
     def _on_sort_changed(self, idx):
         sort_map = {
             0: 'stars',
@@ -217,6 +246,13 @@ class ProjectsView(QWidget):
             high_only=self.high_only,
             home_only=self.home_only
         )
+
+        lic_val = getattr(self, 'lic', '')
+        if lic_val:
+            if lic_val == 'none':
+                filtered = [p for p in filtered if not p.get('license')]
+            else:
+                filtered = [p for p in filtered if p.get('license') and lic_val.lower() in str(p['license']).lower()]
         
         # 2. Sort
         sorted_projects = sort_projects(filtered, by=self.sort)
