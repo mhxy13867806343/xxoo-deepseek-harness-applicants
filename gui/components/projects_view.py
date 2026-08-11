@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from core.data_loader import (data_store, CATS, fmt_num, fmt_k, cat_of, sort_projects, filter_projects, LANG_COLORS)
+from core.logger import app_logger
 from gui.components.widgets import SearchBox, ChipRow, PagerWidget, ProjectCard
 
 class ProjectsView(QWidget):
@@ -249,6 +250,9 @@ class ProjectsView(QWidget):
         self.scroll_area.verticalScrollBar().setValue(0)
         
     def _apply_filters(self):
+        lic_val = getattr(self, 'lic', '')
+        app_logger.info("FILTER", f"筛选项目 -> 搜索='{self.query}', 赛道='{self.cat or '全部'}', 语言='{self.lang or '全部'}', License='{lic_val or '全部'}', 排序='{self.sort}'")
+        
         # 1. Filter
         filtered = filter_projects(
             data_store.projects,
@@ -260,7 +264,6 @@ class ProjectsView(QWidget):
             home_only=self.home_only
         )
 
-        lic_val = getattr(self, 'lic', '')
         if lic_val:
             if lic_val == 'none':
                 filtered = [p for p in filtered if not p.get('license')]
@@ -303,4 +306,6 @@ class ProjectsView(QWidget):
     def _on_card_clicked(self):
         card = self.sender()
         if card and hasattr(card, 'project_data'):
+            proj_name = card.project_data.get('name', 'Unknown')
+            app_logger.info("DETAIL", f"点击查看项目详情 -> {proj_name}")
             self.navigate_to.emit('project_detail', card.project_data)

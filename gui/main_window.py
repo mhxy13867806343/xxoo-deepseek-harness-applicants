@@ -9,6 +9,7 @@ from PyQt5.QtGui import QFont, QIcon, QPainter, QColor, QPen, QPolygonF
 
 from core.data_loader import data_store
 from core.theme_manager import load_theme_setting, save_theme_setting
+from core.logger import app_logger
 from gui.styles import get_theme_qss
 
 from gui.components.home_view import HomeView
@@ -20,6 +21,7 @@ from gui.components.about_view import AboutView
 from gui.components.project_detail_view import ProjectDetailView
 from gui.components.developer_detail_view import DeveloperDetailView
 from gui.components.widgets import LoadingOverlay
+from gui.components.log_dialog import LogDialog
 from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QDesktopServices
 
@@ -262,6 +264,29 @@ class MainWindow(QMainWindow):
         self.btn_refresh.clicked.connect(self._on_refresh_clicked)
         nav_layout.addWidget(self.btn_refresh)
 
+        # Real-time Log Viewer Button
+        self.btn_logs = QPushButton("📋 日志")
+        self.btn_logs.setCursor(Qt.PointingHandCursor)
+        self.btn_logs.setToolTip("查看应用程序实时请求与交互日志")
+        self.btn_logs.setStyleSheet("""
+            QPushButton {
+                background: rgba(130, 168, 207, 0.12);
+                color: #82a8cf;
+                border: 1px solid rgba(130, 168, 207, 0.3);
+                border-radius: 14px;
+                padding: 5px 12px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background: rgba(130, 168, 207, 0.25);
+                border-color: #82a8cf;
+                color: #ece5d6;
+            }
+        """)
+        self.btn_logs.clicked.connect(self._show_log_dialog)
+        nav_layout.addWidget(self.btn_logs)
+
         main_layout.addWidget(self.nav_bar)
 
         # --- View Stack ---
@@ -341,6 +366,7 @@ class MainWindow(QMainWindow):
         self.current_theme = new_theme
         save_theme_setting(new_theme)
         self._apply_theme()
+        app_logger.info("THEME", f"切换应用主题模式 -> {new_theme}")
 
     def _apply_theme(self):
         qss = get_theme_qss(self.current_theme)
@@ -348,10 +374,18 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'btn_theme'):
             self.btn_theme.setText("🌙 深色" if self.current_theme == "dark" else "☀️ 浅色")
 
+    def _show_log_dialog(self):
+        app_logger.info("GUI", "打开实时交互与请求日志窗口")
+        dialog = LogDialog(self)
+        dialog.exec_()
+
     def _navigate(self, key, params=None):
         """Switch to the specified view with loading animation."""
         if key not in self.views:
             return
+
+        label_text = self.VIEW_LABELS.get(key, key)
+        app_logger.info("NAV", f"页面切换 -> {label_text} ({key})")
 
         self.loading_overlay.show_loading("正在加载数据...")
 
@@ -380,7 +414,7 @@ class MainWindow(QMainWindow):
                 if hasattr(view, 'refresh') and key not in ("project_detail", "developer_detail"):
                     view.refresh()
             except Exception as e:
-                print(f"Error switching view to {key}: {e}")
+                app_logger.error("NAV", f"切换页面异常 ({key}): {e}")
             finally:
                 self.loading_overlay.hide_loading()
 
@@ -388,6 +422,7 @@ class MainWindow(QMainWindow):
 
     def _on_refresh_clicked(self):
         """Reload dataset and refresh current view."""
+        app_logger.info("DATA", "重新加载与同步最新档案快照")
         self.loading_overlay.show_loading("正在重新获取与同步最新档案数据...")
 
         def execute_reload():
