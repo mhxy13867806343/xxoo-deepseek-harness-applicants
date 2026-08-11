@@ -192,9 +192,21 @@ def filter_developers(developers, intent='all', identity='all', has_project='all
     return filtered
 
 
-# -----------------------------------------------------------------------------
-# DataStore Singleton
-# -----------------------------------------------------------------------------
+import urllib.request
+
+
+def fetch_live_json(url, timeout=6):
+    """Fetch live JSON payload from remote web server."""
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'HarnessIndex/1.0'})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status == 200:
+                data_bytes = resp.read()
+                return json.loads(data_bytes.decode('utf-8'))
+    except Exception as e:
+        print(f"Failed to fetch online dataset endpoint {url}: {e}")
+    return None
+
 
 class DataStore:
     def __init__(self):
@@ -205,11 +217,36 @@ class DataStore:
         self.dev_by_x = {}
         self.proj_by_name = {}
         
-    def load(self):
+    def load(self, force_remote=True):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_dir = os.path.join(base_dir, 'data')
+        os.makedirs(data_dir, exist_ok=True)
         
-        # Helper to load JSON safely
+        base_remote_url = "https://deepseek-harness-applicants.octoooo.com/data"
+        remote_endpoints = {
+            'stats.json': f"{base_remote_url}/stats.json",
+            'projects.json': f"{base_remote_url}/projects.json",
+            'developers.json': f"{base_remote_url}/developers.json",
+            'featured-projects.json': f"{base_remote_url}/featured-projects.json"
+        }
+
+        # Attempt to fetch live dynamic datasets via HTTP
+        for filename, remote_url in remote_endpoints.items():
+            live_data = fetch_live_json(remote_url)
+            if live_data:
+                local_path = os.path.join(data_dir, filename)
+                try:
+                    with open(local_path, 'w', encoding='utf-8') as f:
+                        json.dump(live_data, f, ensure_ascii=False, indent=2)
+                    try:
+                        from core.logger import app_logger
+                        app_logger.info("HTTP", f"成功同步在线动态数据 -> {filename}")
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"Error caching live {filename}: {e}")
+
+        # Load JSON from data directory
         def load_json(filename):
             path = os.path.join(data_dir, filename)
             if not os.path.exists(path):
