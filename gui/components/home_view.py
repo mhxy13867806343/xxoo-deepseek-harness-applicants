@@ -349,12 +349,20 @@ class HomeView(QWidget):
                 w.deleteLater()
 
         cat_stats = data_store.stats.get('category_stats', {})
-        max_count = max([c.get('count', 0) for c in cat_stats.values()]) if cat_stats else 1
+        def _get_c_info(val):
+            if isinstance(val, dict):
+                return val.get('count', 0), val.get('stars', 0)
+            cnt = val if isinstance(val, (int, float)) else 0
+            return cnt, 0
+
+        counts = [_get_c_info(c)[0] for c in cat_stats.values()]
+        max_count = max(counts) if counts and max(counts) > 0 else 1
         
         row, col = 0, 0
         for cat_id, cat_info in CATS.items():
             if cat_id == 'all': continue
-            c_stat = cat_stats.get(cat_id, {'count': 0, 'stars': 0})
+            c_val = cat_stats.get(cat_id, {})
+            c_cnt, c_stars = _get_c_info(c_val)
             
             card = QWidget()
             card.setCursor(Qt.PointingHandCursor)
@@ -375,14 +383,14 @@ class HomeView(QWidget):
             subtitle = QLabel(cat_id)
             subtitle.setStyleSheet("color: #67758c; font-size: 11px; font-family: 'Menlo', 'Courier New'; border: none; background: transparent;")
             
-            stats_label = QLabel(f"{c_stat['count']} projects · {fmt_k(c_stat['stars'])} stars")
+            stats_label = QLabel(f"{c_cnt} projects · {fmt_k(c_stars)} stars")
             stats_label.setStyleSheet("color: #9aa7ba; font-size: 12px; border: none; background: transparent;")
             
             prog = QProgressBar()
             prog.setFixedHeight(4)
             prog.setTextVisible(False)
             prog.setMaximum(max_count)
-            prog.setValue(c_stat['count'])
+            prog.setValue(c_cnt)
             prog.setStyleSheet("""
                 QProgressBar { border: none; background: #0a0e17; border-radius: 2px; }
                 QProgressBar::chunk { background-color: #e3b341; border-radius: 2px; }
@@ -440,7 +448,8 @@ class HomeView(QWidget):
         
         track_data = []
         for cat_id, c_stat in cat_stats.items():
-            track_data.append((CATS.get(cat_id, {}).get('zh', cat_id), c_stat.get('count', 0)))
+            c_cnt, _ = _get_c_info(c_stat)
+            track_data.append((CATS.get(cat_id, {}).get('zh', cat_id), c_cnt))
         track_data.sort(key=lambda x: x[1], reverse=True)
         self.track_chart.set_data(track_data[:10], ['#4f6385']*10)
 

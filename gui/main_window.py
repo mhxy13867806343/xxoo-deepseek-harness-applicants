@@ -272,28 +272,31 @@ class MainWindow(QMainWindow):
         self.loading_overlay.show_loading("正在加载数据...")
 
         def execute_switch():
-            view = self.views[key]
+            try:
+                view = self.views[key]
 
-            # Detail parameters
-            if key == "project_detail" and params:
-                view.set_project(params)
-            elif key == "developer_detail" and params:
-                view.set_developer(params)
-            elif params and key == "leaderboard" and "cat" in params:
-                if hasattr(view, 'set_category'):
-                    view.set_category(params["cat"])
+                # Detail parameters
+                if key == "project_detail" and params:
+                    view.set_project(params)
+                elif key == "developer_detail" and params:
+                    view.set_developer(params)
+                elif params and key == "leaderboard" and "cat" in params:
+                    if hasattr(view, 'set_category'):
+                        view.set_category(params["cat"])
 
-            self.stack.setCurrentWidget(view)
+                self.stack.setCurrentWidget(view)
 
-            # Update nav button states
-            for k, btn in self.nav_buttons.items():
-                btn.setChecked(k == key)
+                # Update nav button states
+                for k, btn in self.nav_buttons.items():
+                    btn.setChecked(k == key)
 
-            # Refresh view data
-            if hasattr(view, 'refresh') and key not in ("project_detail", "developer_detail"):
-                view.refresh()
-
-            self.loading_overlay.hide_loading()
+                # Refresh view data
+                if hasattr(view, 'refresh') and key not in ("project_detail", "developer_detail"):
+                    view.refresh()
+            except Exception as e:
+                print(f"Error switching view to {key}: {e}")
+            finally:
+                self.loading_overlay.hide_loading()
 
         QTimer.singleShot(150, execute_switch)
 
@@ -323,4 +326,6 @@ class MainWindow(QMainWindow):
             "developer_detail": "developer_detail",
         }
         key = view_map.get(target, "home")
-        self._navigate(key, params if (isinstance(params, dict) or isinstance(params, str)) else {})
+        if not isinstance(params, (dict, str)):
+            params = {}
+        self._navigate(key, params)
