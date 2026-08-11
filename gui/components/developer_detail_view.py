@@ -129,18 +129,37 @@ class DeveloperDetailView(QWidget):
 
         # Dev Info
         info_layout = QVBoxLayout()
-        info_layout.setSpacing(6)
+        info_layout.setSpacing(12)
 
         title_row = QHBoxLayout()
-        name_lbl = QLabel(name)
-        name_lbl.setStyleSheet("color: #ece5d6; font-size: 24px; font-weight: bold;")
-        title_row.addWidget(name_lbl)
+        title_row.setSpacing(12)
+
+        # Name box
+        name_box = QLabel(name)
+        name_box.setStyleSheet("""
+            color: #ece5d6;
+            font-size: 22px;
+            font-weight: 700;
+            background-color: #141d2e;
+            border: 1px solid rgba(158, 178, 205, 0.18);
+            border-radius: 12px;
+            padding: 10px 20px;
+        """)
+        title_row.addWidget(name_box)
 
         x_handle = dev.get("x")
         if x_handle:
-            x_lbl = QLabel(f"@{x_handle}")
-            x_lbl.setStyleSheet("color: #67758c; font-size: 14px;")
-            title_row.addWidget(x_lbl)
+            x_box = QLabel(f"@{x_handle}")
+            x_box.setStyleSheet("""
+                color: #67758c;
+                font-size: 14px;
+                font-family: 'Menlo', 'Courier New';
+                background-color: #141d2e;
+                border: 1px solid rgba(158, 178, 205, 0.15);
+                border-radius: 12px;
+                padding: 10px 16px;
+            """)
+            title_row.addWidget(x_box)
 
         title_row.addStretch()
         info_layout.addLayout(title_row)
@@ -160,13 +179,27 @@ class DeveloperDetailView(QWidget):
         badges_row.addStretch()
         info_layout.addLayout(badges_row)
 
-        # Excerpt / Bio
+        # Excerpt / Bio Container (matching Image 1)
         excerpt = dev.get("excerpt") or dev.get("bio")
         if excerpt:
+            bio_box = QFrame()
+            bio_box.setStyleSheet("""
+                QFrame {
+                    background-color: #121927;
+                    border: 1px solid rgba(158, 178, 205, 0.14);
+                    border-radius: 10px;
+                    padding: 14px 18px;
+                }
+            """)
+            bio_layout = QVBoxLayout(bio_box)
+            bio_layout.setContentsMargins(0, 0, 0, 0)
+            
             excerpt_lbl = QLabel(excerpt)
-            excerpt_lbl.setStyleSheet("color: #9aa7ba; font-size: 13px; margin-top: 4px;")
+            excerpt_lbl.setStyleSheet("color: #9aa7ba; font-size: 13px; line-height: 1.5; font-family: 'Menlo', 'Helvetica Neue';")
             excerpt_lbl.setWordWrap(True)
-            info_layout.addWidget(excerpt_lbl)
+            bio_layout.addWidget(excerpt_lbl)
+            
+            info_layout.addWidget(bio_box)
 
         hc_layout.addLayout(info_layout, 1)
 

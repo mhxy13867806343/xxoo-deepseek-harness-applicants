@@ -151,12 +151,20 @@ class DevelopersView(QWidget):
             }
         """
 
+    def _trigger_loading(self, text="正在加载数据..."):
+        win = self.window()
+        if win and hasattr(win, 'loading_overlay'):
+            win.loading_overlay.show_loading(text)
+            QTimer.singleShot(150, win.loading_overlay.hide_loading)
+
     def _on_search_changed(self, text):
         self.query = text.strip()
         self.page = 1
+        self._trigger_loading("正在搜索...")
         self.debounce_timer.start()
 
     def _on_combo_changed(self):
+        self._trigger_loading("正在筛选开发者档案...")
         self.intent = self.intent_combo.currentData()
         self.identity = self.identity_combo.currentData()
         self.has_project = self.has_project_combo.currentData()
@@ -164,6 +172,7 @@ class DevelopersView(QWidget):
         self._apply_filters()
 
     def _on_page_changed(self, page):
+        self._trigger_loading("正在加载页面...")
         self.page = page
         self._apply_filters()
 

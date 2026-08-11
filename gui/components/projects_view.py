@@ -183,12 +183,19 @@ class ProjectsView(QWidget):
         
         self._apply_filters()
         
+    def _trigger_loading(self, text="正在加载数据..."):
+        win = self.window()
+        if win and hasattr(win, 'loading_overlay'):
+            win.loading_overlay.show_loading(text)
+            QTimer.singleShot(150, win.loading_overlay.hide_loading)
+
     def _on_search_changed(self, text):
         self.query = text.strip()
         self.search_timer.start()
         
     def _on_search_timeout(self):
         self.page = 1
+        self._trigger_loading("正在搜索项目...")
         self._apply_filters()
         
     def _on_lang_changed(self, idx):
@@ -197,6 +204,7 @@ class ProjectsView(QWidget):
         else:
             self.lang = ""
         self.page = 1
+        self._trigger_loading("正在筛选语言...")
         self._apply_filters()
 
     def _on_lic_changed(self, idx):
@@ -205,6 +213,7 @@ class ProjectsView(QWidget):
         else:
             self.lic = ""
         self.page = 1
+        self._trigger_loading("正在筛选 License...")
         self._apply_filters()
 
     def _on_sort_changed(self, idx):
@@ -216,6 +225,7 @@ class ProjectsView(QWidget):
         }
         self.sort = sort_map.get(idx, 'stars')
         self.page = 1
+        self._trigger_loading("正在重新排序...")
         self._apply_filters()
         
     def _on_filters_changed(self, state):
@@ -223,15 +233,18 @@ class ProjectsView(QWidget):
         self.high_only = self.cb_high.isChecked()
         self.home_only = self.cb_home.isChecked()
         self.page = 1
+        self._trigger_loading("正在更新过滤...")
         self._apply_filters()
         
     def _on_cat_changed(self, cat_id):
         self.cat = '' if cat_id == 'all' else cat_id
         self.page = 1
+        self._trigger_loading("正在切换赛道...")
         self._apply_filters()
         
     def _on_page_changed(self, page):
         self.page = page
+        self._trigger_loading("正在加载页面...")
         self._apply_filters()
         self.scroll_area.verticalScrollBar().setValue(0)
         

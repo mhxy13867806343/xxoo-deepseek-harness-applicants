@@ -164,6 +164,21 @@ class LeaderboardView(QWidget):
         self.chips.set_active(cat_id if cat_id else "all")
         self._apply_filters()
 
+    def _trigger_loading(self, text="正在加载数据..."):
+        win = self.window()
+        if win and hasattr(win, 'loading_overlay'):
+            win.loading_overlay.show_loading(text)
+            QTimer.singleShot(150, win.loading_overlay.hide_loading)
+
+    def _on_cat_changed(self, cat_id):
+        if cat_id == "all":
+            cat_id = ""
+        self.cat = cat_id
+        self.page = 1
+        self.chips.set_active(cat_id if cat_id else "all")
+        self._trigger_loading("正在切换赛道...")
+        self._apply_filters()
+
     def _on_sort_changed(self, btn):
         if btn == self.btn_sort_stars:
             self.sort = 'stars'
@@ -172,15 +187,18 @@ class LeaderboardView(QWidget):
         elif btn == self.btn_sort_created:
             self.sort = 'created'
         self.page = 1
+        self._trigger_loading("正在重新排序...")
         self._apply_filters()
 
     def _on_ds_changed(self, state):
         self.ds_only = (state == Qt.Checked)
         self.page = 1
+        self._trigger_loading("正在更新过滤...")
         self._apply_filters()
         
     def _on_page_changed(self, new_page):
         self.page = new_page
+        self._trigger_loading("正在切换分页...")
         self._apply_filters()
 
     def _on_table_clicked(self, row, col):
