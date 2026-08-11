@@ -8,6 +8,8 @@ from PyQt5.QtCore import Qt, QSize, QTimer, QPointF
 from PyQt5.QtGui import QFont, QIcon, QPainter, QColor, QPen, QPolygonF
 
 from core.data_loader import data_store
+from core.theme_manager import load_theme_setting, save_theme_setting
+from gui.styles import get_theme_qss
 
 from gui.components.home_view import HomeView
 from gui.components.leaderboard_view import LeaderboardView
@@ -18,6 +20,8 @@ from gui.components.about_view import AboutView
 from gui.components.project_detail_view import ProjectDetailView
 from gui.components.developer_detail_view import DeveloperDetailView
 from gui.components.widgets import LoadingOverlay
+from PyQt5.QtCore import QUrl
+from PyQt5.QtGui import QDesktopServices
 
 
 class BrandIcon(QWidget):
@@ -82,11 +86,18 @@ class MainWindow(QMainWindow):
         "about": "关于",
     }
 
+    URL_WEB = "https://deepseek-harness-applicants.octoooo.com/#/"
+    URL_GITEE = "https://gitee.com/fangjiayu/xxoo-deepseek-harness-applicants"
+    URL_GITHUB = "https://github.com/mhxy13867806343/xxoo-deepseek-harness-applicants"
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Harness Index · DeepSeek Harness 内测报名档案")
         self.setMinimumSize(1100, 720)
         self.resize(1280, 860)
+
+        # Load saved theme setting
+        self.current_theme = load_theme_setting()
 
         # Load data
         data_store.load()
@@ -102,15 +113,9 @@ class MainWindow(QMainWindow):
         self.nav_bar = QFrame()
         self.nav_bar.setObjectName("navBar")
         self.nav_bar.setFixedHeight(56)
-        self.nav_bar.setStyleSheet("""
-            QFrame#navBar {
-                background: rgba(10, 14, 23, 0.95);
-                border-bottom: 1px solid rgba(158, 178, 205, 0.10);
-            }
-        """)
 
         nav_layout = QHBoxLayout(self.nav_bar)
-        nav_layout.setContentsMargins(24, 0, 24, 0)
+        nav_layout.setContentsMargins(20, 0, 20, 0)
         nav_layout.setSpacing(10)
 
         # Brand
@@ -126,7 +131,6 @@ class MainWindow(QMainWindow):
         brand_name.setStyleSheet("""
             font-weight: 600;
             font-size: 14px;
-            color: #f7f2e6;
             font-family: 'Avenir Next', 'Helvetica Neue', Arial;
         """)
         brand_sub = QLabel("DeepSeek 内测报名档案")
@@ -139,36 +143,74 @@ class MainWindow(QMainWindow):
         brand_text_layout.addWidget(brand_sub)
         nav_layout.addWidget(brand_text)
 
-        nav_layout.addSpacerItem(QSpacerItem(40, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        nav_layout.addSpacerItem(QSpacerItem(30, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         # Nav buttons
         self.nav_buttons = {}
         for key in self.VIEW_KEYS:
             btn = NavButton(self.VIEW_LABELS[key], key)
-            btn.setStyleSheet("""
-                QPushButton {
-                    background: transparent;
-                    color: #9aa7ba;
-                    border: none;
-                    border-radius: 16px;
-                    padding: 6px 16px;
-                    font-size: 13px;
-                    font-weight: 500;
-                }
-                QPushButton:hover {
-                    color: #f7f2e6;
-                    background: rgba(130, 168, 207, 0.12);
-                }
-                QPushButton:checked {
-                    color: #e3b341;
-                    background: transparent;
-                }
-            """)
             btn.clicked.connect(lambda checked, k=key: self._navigate(k))
             nav_layout.addWidget(btn)
             self.nav_buttons[key] = btn
 
         nav_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+        # Source Link Buttons (Web, Gitee, GitHub)
+        btn_web = QPushButton("🌐 网页端")
+        btn_web.setCursor(Qt.PointingHandCursor)
+        btn_web.setToolTip("在浏览器中打开在线网页版")
+        btn_web.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #82a8cf;
+                border: 1px solid rgba(130, 168, 207, 0.3);
+                border-radius: 14px;
+                padding: 4px 10px;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background: rgba(130, 168, 207, 0.15);
+                color: #ece5d6;
+            }
+        """)
+        btn_web.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.URL_WEB)))
+        nav_layout.addWidget(btn_web)
+
+        btn_gitee = QPushButton("📦 Gitee")
+        btn_gitee.setCursor(Qt.PointingHandCursor)
+        btn_gitee.setToolTip("打开 Gitee 源码仓库")
+        btn_gitee.setStyleSheet(btn_web.styleSheet())
+        btn_gitee.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.URL_GITEE)))
+        nav_layout.addWidget(btn_gitee)
+
+        btn_github = QPushButton("🐙 GitHub")
+        btn_github.setCursor(Qt.PointingHandCursor)
+        btn_github.setToolTip("打开 GitHub 源码仓库")
+        btn_github.setStyleSheet(btn_web.styleSheet())
+        btn_github.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.URL_GITHUB)))
+        nav_layout.addWidget(btn_github)
+
+        # Theme Toggle Button (Dark / Light)
+        self.btn_theme = QPushButton("🌙 深色" if self.current_theme == "dark" else "☀️ 浅色")
+        self.btn_theme.setCursor(Qt.PointingHandCursor)
+        self.btn_theme.setToolTip("切换深色/浅色模式 (状态会自动保存)")
+        self.btn_theme.setStyleSheet("""
+            QPushButton {
+                background: rgba(158, 178, 205, 0.12);
+                color: #ece5d6;
+                border: 1px solid rgba(158, 178, 205, 0.25);
+                border-radius: 14px;
+                padding: 5px 12px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background: rgba(158, 178, 205, 0.25);
+                border-color: #e3b341;
+            }
+        """)
+        self.btn_theme.clicked.connect(self._toggle_theme)
+        nav_layout.addWidget(self.btn_theme)
 
         # Refresh Data Button
         self.btn_refresh = QPushButton("🔄 刷新")
@@ -196,8 +238,10 @@ class MainWindow(QMainWindow):
 
         # --- View Stack ---
         self.stack = QStackedWidget()
-        self.stack.setStyleSheet("background: #0a0e17;")
         main_layout.addWidget(self.stack)
+
+        # Apply loaded theme QSS
+        self._apply_theme()
 
         # Loading Overlay
         self.loading_overlay = LoadingOverlay(central)
@@ -263,6 +307,18 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         if hasattr(self, 'loading_overlay') and self.loading_overlay.isVisible():
             self.loading_overlay.resize(self.centralWidget().size())
+
+    def _toggle_theme(self):
+        new_theme = "light" if self.current_theme == "dark" else "dark"
+        self.current_theme = new_theme
+        save_theme_setting(new_theme)
+        self._apply_theme()
+
+    def _apply_theme(self):
+        qss = get_theme_qss(self.current_theme)
+        QApplication.instance().setStyleSheet(qss)
+        if hasattr(self, 'btn_theme'):
+            self.btn_theme.setText("🌙 深色" if self.current_theme == "dark" else "☀️ 浅色")
 
     def _navigate(self, key, params=None):
         """Switch to the specified view with loading animation."""

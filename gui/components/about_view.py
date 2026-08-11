@@ -67,6 +67,13 @@ class AboutView(QWidget):
         
         <p>招募帖要求报名者在 X 上回复：X 身份、GitHub ID、代表性开源项目。<br>
         我们把整场活动整理为可检索、可审计、可复现的结构化数据。</p>
+
+        <h2>官方来源与代码仓库</h2>
+        <ul>
+            <li><b>🌐 在线网页端:</b> <a href="https://deepseek-harness-applicants.octoooo.com/#/" style="color: #e3b341;">https://deepseek-harness-applicants.octoooo.com/#/</a></li>
+            <li><b>📦 Gitee 仓库:</b> <a href="https://gitee.com/fangjiayu/xxoo-deepseek-harness-applicants" style="color: #e3b341;">https://gitee.com/fangjiayu/xxoo-deepseek-harness-applicants</a></li>
+            <li><b>🐙 GitHub 仓库:</b> <a href="https://github.com/mhxy13867806343/xxoo-deepseek-harness-applicants" style="color: #e3b341;">https://github.com/mhxy13867806343/xxoo-deepseek-harness-applicants</a></li>
+        </ul>
         
         <h2>档案原则</h2>
         <ul>
