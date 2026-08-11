@@ -59,18 +59,46 @@ class BrandIcon(QWidget):
 
 
 class NavButton(QPushButton):
-    """Navigation button with active state."""
+    """Navigation button with bright active gold state."""
 
     def __init__(self, text, key, parent=None):
         super().__init__(text, parent)
         self.key = key
         self.setCheckable(True)
         self.setCursor(Qt.PointingHandCursor)
-        self.setProperty("cssClass", "navBtn")
         self.setFixedHeight(34)
-        font = self.font()
-        font.setPointSize(13)
-        self.setFont(font)
+        self.update_active_state(False)
+
+    def update_active_state(self, active=False):
+        self.setChecked(active)
+        if active:
+            self.setStyleSheet("""
+                QPushButton {
+                    color: #e3b341;
+                    font-weight: 700;
+                    background-color: rgba(227, 179, 65, 0.18);
+                    border: 1px solid rgba(227, 179, 65, 0.45);
+                    border-radius: 16px;
+                    padding: 6px 16px;
+                    font-size: 13px;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QPushButton {
+                    color: #9aa7ba;
+                    font-weight: 500;
+                    background-color: transparent;
+                    border: 1px solid transparent;
+                    border-radius: 16px;
+                    padding: 6px 16px;
+                    font-size: 13px;
+                }
+                QPushButton:hover {
+                    color: #f7f2e6;
+                    background-color: rgba(130, 168, 207, 0.12);
+                }
+            """)
 
 
 class MainWindow(QMainWindow):
@@ -344,7 +372,9 @@ class MainWindow(QMainWindow):
 
                 # Update nav button states
                 for k, btn in self.nav_buttons.items():
-                    btn.setChecked(k == key)
+                    is_active = (k == key)
+                    if hasattr(btn, 'update_active_state'):
+                        btn.update_active_state(is_active)
 
                 # Refresh view data
                 if hasattr(view, 'refresh') and key not in ("project_detail", "developer_detail"):
