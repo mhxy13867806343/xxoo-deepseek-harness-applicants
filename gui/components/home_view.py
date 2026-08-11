@@ -553,29 +553,29 @@ class HomeView(QWidget):
                 card.hide()
 
         # Update Ecosystem Section (Language Dist, Stars Tier, Track Volume)
-        self._update_ecosystem_views(max_count)
+        self._update_ecosystem_views()
 
-    def _update_ecosystem_views(self, max_count):
-        # 1. Languages
+        # Update Gaps Section dynamically
+        self._update_gaps_views()
+
+    def _update_ecosystem_views(self):
+        # 1. Languages (100% Dynamic Aggregation from data_store.projects)
         while self.lang_items_layout.count():
             item = self.lang_items_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        lang_stats = [
-            ("TypeScript", 264, "#3178c6"),
-            ("Python", 243, "#3572A5"),
-            ("Rust", 86, "#dea584"),
-            ("JavaScript", 67, "#f1e05a"),
-            ("Go", 63, "#00ADD8"),
-            ("Swift", 23, "#F05138"),
-            ("HTML", 16, "#e34c26"),
-            ("Java", 14, "#b07219"),
-            ("C++", 13, "#f34b7d"),
-            ("Shell", 11, "#89e051"),
-        ]
+        lang_map = {}
+        for p in data_store.projects:
+            lang = p.get('language')
+            if lang and lang != '(none)':
+                lang_map[lang] = lang_map.get(lang, 0) + 1
 
-        for name, cnt, color in lang_stats:
+        dynamic_langs = sorted(lang_map.items(), key=lambda x: x[1], reverse=True)[:10]
+        max_lang_cnt = dynamic_langs[0][1] if dynamic_langs else 1
+
+        for name, cnt in dynamic_langs:
+            color = LANG_COLORS.get(name, '#b3821e')
             row_widget = QWidget()
             row_layout = QHBoxLayout(row_widget)
             row_layout.setContentsMargins(0, 0, 0, 0)
@@ -589,7 +589,7 @@ class HomeView(QWidget):
             prog = QProgressBar()
             prog.setFixedHeight(6)
             prog.setTextVisible(False)
-            prog.setMaximum(300)
+            prog.setMaximum(max_lang_cnt)
             prog.setValue(cnt)
             prog.setStyleSheet(f"""
                 QProgressBar {{ border: none; background: #0a0e17; border-radius: 3px; }}
@@ -606,7 +606,7 @@ class HomeView(QWidget):
             row_layout.addWidget(val_lbl)
             self.lang_items_layout.addWidget(row_widget)
 
-        # 2. Stars Tiers
+        # 2. Stars Tiers (100% Dynamic Aggregation from data_store.projects)
         while self.tier_bar_layout.count():
             item = self.tier_bar_layout.takeAt(0)
             if item.widget():
@@ -616,12 +616,28 @@ class HomeView(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
+        s_cnt, a_cnt, b_cnt, c_cnt, z_cnt = 0, 0, 0, 0, 0
+        for p in data_store.projects:
+            st = p.get('stars') or 0
+            if st >= 10000: s_cnt += 1
+            elif st >= 1000: a_cnt += 1
+            elif st >= 100: b_cnt += 1
+            elif st >= 1: c_cnt += 1
+            else: z_cnt += 1
+
+        tot = len(data_store.projects) or 1
+        s_pct = max(1, round((s_cnt / tot) * 100))
+        a_pct = max(1, round((a_cnt / tot) * 100))
+        b_pct = max(1, round((b_cnt / tot) * 100))
+        c_pct = max(1, round((c_cnt / tot) * 100))
+        z_pct = max(1, 100 - (s_pct + a_pct + b_pct + c_pct))
+
         tier_data = [
-            ("S", "10,000+ ★", 31, "4%", "#e3b341", 4),
-            ("A", "1,000 - 10k ★", 73, "8%", "#82a8cf", 8),
-            ("B", "100 - 1k ★", 134, "15%", "#738bb0", 15),
-            ("C", "1 - 100 ★", 482, "55%", "#4f6385", 55),
-            ("Z", "0 ★", 157, "18%", "#2d3c54", 18),
+            ("S", "10,000+ ★", s_cnt, f"{s_pct}%", "#e3b341", s_pct),
+            ("A", "1,000 - 10k ★", a_cnt, f"{a_pct}%", "#82a8cf", a_pct),
+            ("B", "100 - 1k ★", b_cnt, f"{b_pct}%", "#738bb0", b_pct),
+            ("C", "1 - 100 ★", c_cnt, f"{c_pct}%", "#4f6385", c_pct),
+            ("Z", "0 ★", z_cnt, f"{z_pct}%", "#2d3c54", z_pct),
         ]
 
         for _, _, _, _, color, pct_val in tier_data:
@@ -652,33 +668,30 @@ class HomeView(QWidget):
             t_layout.addWidget(t_val)
             self.tier_items_layout.addWidget(t_row)
 
-        # 3. Track Volume List (Image 2)
+        # 3. Track Volume List (100% Dynamic Aggregation from data_store.projects)
         while self.track_items_layout.count():
             item = self.track_items_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        track_stats = [
-            ("编程智能体", 146, "290.6k*"),
-            ("智能体框架", 141, "140.6k*"),
-            ("技能包", 118, "96.3k*"),
-            ("记忆与上下文", 78, "205.2k*"),
-            ("智能体编排", 71, "82.9k*"),
-            ("智能体工作台", 60, "108.1k*"),
-            ("工具与自动化", 48, "103.1k*"),
-            ("智能体客户端", 37, "45.3k*"),
-            ("基础设施", 31, "88.1k*"),
-            ("创意工具", 30, "40.2k*"),
-            ("研究与评测", 27, "5k*"),
-            ("安全与治理", 26, "10.2k*"),
-            ("开发者工具", 21, "102.1k*"),
-            ("未分类", 19, "731*"),
-            ("研究工具", 11, "13k*"),
-            ("教育", 7, "193*"),
-            ("其他", 3, "30.1k*"),
-        ]
+        track_agg = {}
+        for p in data_store.projects:
+            cat_id = p.get('category') or 'unclassified'
+            cat_info = cat_of(cat_id)
+            zh_title = cat_info.get('zh', cat_id) if isinstance(cat_info, dict) else str(cat_id)
+            if cat_id not in track_agg:
+                track_agg[cat_id] = {'zh': zh_title, 'count': 0, 'stars': 0}
+            track_agg[cat_id]['count'] += 1
+            track_agg[cat_id]['stars'] += (p.get('stars') or 0)
 
-        for t_zh, cnt, stars_str in track_stats:
+        dynamic_tracks = sorted(track_agg.values(), key=lambda x: x['count'], reverse=True)
+        max_track_cnt = dynamic_tracks[0]['count'] if dynamic_tracks else 1
+
+        for track_item in dynamic_tracks:
+            t_zh = track_item['zh']
+            cnt = track_item['count']
+            stars_str = fmt_k(track_item['stars']) + "*"
+
             v_row = QWidget()
             v_layout = QHBoxLayout(v_row)
             v_layout.setContentsMargins(0, 0, 0, 0)
@@ -690,7 +703,7 @@ class HomeView(QWidget):
             prog = QProgressBar()
             prog.setFixedHeight(6)
             prog.setTextVisible(False)
-            prog.setMaximum(150)
+            prog.setMaximum(max_track_cnt)
             prog.setValue(cnt)
             prog.setStyleSheet("""
                 QProgressBar { border: none; background: #0a0e17; border-radius: 3px; }
@@ -705,6 +718,29 @@ class HomeView(QWidget):
             v_layout.addWidget(prog, 1)
             v_layout.addWidget(stat_lbl)
             self.track_items_layout.addWidget(v_row)
+
+    def _update_gaps_views(self):
+        # 100% Dynamic Gaps Computation from data_store
+        gap_stats = data_store.stats.get('residual_gaps', {})
+        c1 = gap_stats.get('missing_explicit_github_id_with_project', sum(1 for d in data_store.developers if d.get('identity_confidence') == 'unconfirmed' and d.get('projects')))
+        c2 = gap_stats.get('no_project', sum(1 for d in data_store.developers if not d.get('projects')))
+        c3 = gap_stats.get('github_404', sum(1 for p in data_store.projects if p.get('github_404') or p.get('status') == 404))
+        c4 = gap_stats.get('empty_description', sum(1 for p in data_store.projects if not p.get('description')))
+        c5 = gap_stats.get('unclassified', sum(1 for p in data_store.projects if p.get('category') == 'unclassified'))
+        c6 = gap_stats.get('no_homepage', sum(1 for p in data_store.projects if not p.get('homepage') and not p.get('has_homepage')))
+
+        dynamic_gaps = [
+            (str(c1), "有代表项目、但来源未显式给出 GitHub 身份"),
+            (str(c2), "报名记录中没有可挂接的代表项目"),
+            (str(c3), "抓取时点返回 404 的仓库"),
+            (str(c4), "描述为空的仓库"),
+            (str(c5), "保守策略下仍未分类的项目"),
+            (str(c6), "未解析到项目主页（GitHub homepage / README）"),
+        ]
+
+        for i, (num_str, _) in enumerate(dynamic_gaps):
+            if i < len(self.gap_cards):
+                self.gap_cards[i][1].setText(num_str)
 
     def on_top10_clicked(self, row, col):
         if hasattr(self, 'top10_data') and row < len(self.top10_data):
